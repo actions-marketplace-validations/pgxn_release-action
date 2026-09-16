@@ -14,6 +14,9 @@ The theme of this release is *Decontainerize.*
 ### ⚡ Improvements
 
 *   First release
+*   Validates `META.json` before release
+*   Uses `git archive` to build a release zip file
+*   Uses `git archive-all` to include submodules in a release zip file
 
 ### 🏗️ Build Setup
 

@@ -1,9 +1,9 @@
-name: PGXN Postgres Action
-description: Install, configure, and start a PostgreSQL cluster for testing extensions.
+name: PGXN Release Action
+description: Release Postgres extensions and tools on PGXN.
 author: David E. Wheeler
 branding:
-  icon: database
-  color: orange
+  icon: upload
+  color: purple
 
 inputs:
   username:
@@ -13,12 +13,12 @@ inputs:
     description: PGXN
     required: true
   submodules:
-    description: Set to true to recursively checkout submodules.
+    description: Recursively checkout submodules
     default: false
   archive-options:
-    description: options to the `git archive` (or`git archive-all`) command
+    description: Options to the `git archive` (or `git archive-all`) command
   dry-run:
-    description: Print the release command, rather than execute it.
+    description: Print the release command, rather than execute it
     default: false
 
 runs:
@@ -28,11 +28,10 @@ runs:
       shell: bash
       run: |
         set -eu
-        sudo apt-get --quiet install -y libsemver-perl
-        curl -sL https://cpanmin.us/ -o /tmp/cpanm && chmod +x /tmp/cpanm
-        sudo /tmp/cpanm --quiet --notest PGXN::Meta::Validator
-        validate_pgxn_meta META.json
         if [ -e META.json ]; then
+            sudo apt-get --quiet install -y libsemver-perl
+            curl -sL https://cpanmin.us/ -o "$RUNNER_TEMP/cpanm" && chmod +x "$RUNNER_TEMP/cpanm"
+            sudo $"$RUNNER_TEMP/cpanm" --quiet --notest PGXN::Meta::Validator
             validate_pgxn_meta META.json
         else
             echo 'ERROR:  No META.json file'
@@ -70,7 +69,6 @@ runs:
         fi
 
         status="$(curl -s --user "${{ inputs.username }}:${{ inputs.password }}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.zip }}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload)"
-        echo
         if [ "${status}" -ne 200 ]; then
             echo 'ERROR: Release failed'
             exit 2
