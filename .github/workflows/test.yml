@@ -1,0 +1,108 @@
+name: 🧪 Test
+on:
+  push:
+jobs:
+  basic:
+    name: Test Basics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+      - name: Dry Run
+        uses: ./
+        with:
+          username: meyo
+          password: s3cr3t
+          dry-run: true
+      - name: Inspect Bundle
+        run: |
+          set -eu
+          zipinfo -1 widget-1.0.0.zip > contents.txt
+          printf 'widget-1.0.0/\nwidget-1.0.0/CHANGELOG.md\nwidget-1.0.0/LICENSE.md\nwidget-1.0.0/META.json\nwidget-1.0.0/README.md\nwidget-1.0.0/action.yml\n' > expect.txt
+          diff -u expect.txt contents.txt
+  post:
+    name: Test Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+      - name: Attempt Release
+        uses: ./
+        id: release
+        continue-on-error: true
+        with:
+          username: meyo
+          password: s3cr3t
+      - name: Ensure Failure
+        run: echo "OK"
+        if: job.steps.release.status == failure()
+      - name: Fail Success
+        run: echo 'Unexpected success; exit 1'
+        if: job.steps.release.status != failure()
+  validation:
+    name: Test Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+      - name: Monkey with META.json
+        run: perl -i -pe 's/postgresql/nonesuch/' META.json
+      - name: Attempt Validation
+        uses: ./
+        id: release
+        continue-on-error: true
+        with:
+          username: meyo
+          password: s3cr3t
+          dry-run: true
+      - name: Ensure Failure
+        run: echo "OK"
+        if: job.steps.release.status == failure()
+      - name: Fail Success
+        run: echo 'Unexpected success; exit 1'
+        if: job.steps.release.status != failure()
+  archve-options:
+    name: Test Archive Options
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+      - name: Add file
+        run: printf 'hi!\n' >> some.txt
+      - name: Dry Run
+        uses: ./
+        with:
+          username: anna
+          password: bagel
+          archive-options: --add-file some.txt
+          dry-run: true
+      - name: Inspect Bundle
+        run: |
+          set -eu
+          zipinfo -1 widget-1.0.0.zip > contents.txt
+          printf 'widget-1.0.0/\nwidget-1.0.0/CHANGELOG.md\nwidget-1.0.0/LICENSE.md\nwidget-1.0.0/META.json\nwidget-1.0.0/README.md\nwidget-1.0.0/action.yml\nwidget-1.0.0/some.txt\n' > expect.txt
+          diff -u expect.txt contents.txt
+  archive-all:
+    name: Test Options
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+      - name: Add file
+        run: printf 'it me!\n' >> more.txt
+      - name: Add submodule
+        run: git submodule add https://github.com/theory/tag-test.git
+      - name: Dry Run
+        uses: ./
+        with:
+          username: slick
+          password: nono
+          archive-options: --include more.txt
+          submodules: true
+          dry-run: true
+      - name: Inspect Bundle
+        run: |
+          set -eu
+          zipinfo -1 widget-1.0.0.zip > contents.txt
+          printf 'widget-1.0.0/more.txt\nwidget-1.0.0/CHANGELOG.md\nwidget-1.0.0/LICENSE.md\nwidget-1.0.0/META.json\nwidget-1.0.0/README.md\nwidget-1.0.0/action.yml\nwidget-1.0.0/tag-test/README.md\nwidget-1.0.0/tag-test/is_main.go\n' > expect.txt
+          diff -u expect.txt contents.txt

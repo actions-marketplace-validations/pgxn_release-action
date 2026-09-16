@@ -28,7 +28,9 @@ runs:
       shell: bash
       run: |
         set -eu
-        cpanm --notest PGXN::Meta::Validator
+        sudo apt-get --quiet install -y libsemver-perl
+        curl -sL https://cpanmin.us/ -o /tmp/cpanm && chmod +x /tmp/cpanm
+        sudo /tmp/cpanm --quiet --notest PGXN::Meta::Validator
         validate_pgxn_meta META.json
         if [ -e META.json ]; then
             validate_pgxn_meta META.json
@@ -38,33 +40,38 @@ runs:
             echo '        distribution, including the required META.json file.'
             exit 2
         fi
+
     - name: Bundle
       id: bundle
       shell: bash
       run: |
+        set -eu
         # Get the distribution name and version.
-        distname=$(jq -r .name    META.json)"
+        distname="$(jq -r .name    META.json)"
         version="$(jq -r .version META.json)"
         release="${distname}-${version}"
 
-        if [ "${INPUT_SUBMODULES}" == 'true' ]; then
-            git archive-all -v --prefix "${release}/" --force-submodules ${INPUT_ARCHIVE_OPTIONS:-} "${release}.zip"
+        if [ "${{ inputs.submodules }}" == 'true' ]; then
+            sudo pip install --root-user-action=ignore git-archive-all
+            git archive-all -v --prefix "${release}/" --force-submodules ${{ inputs.archive-options }} "${release}.zip"
         else
-            git archive -v --format zip --prefix "${release}/" ${INPUT_ARCHIVE_OPTIONS:-} --output "${release}.zip" HEAD
+            git archive -v --format zip --prefix "${release}/" ${{ inputs.archive-options }} --output "${release}.zip" HEAD
         fi
 
         printf 'zip=%s.zip\n' "$release" >> "$GITHUB_OUTPUT"
+
     - name: Release
       shell: bash
       run: |
-        if [ "${INPUT_DRY_RUN}" == 'true' ]; then
-            echo curl --user "${INPUT_USERNAME}:${INPUT_PASSWORD}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.zip}}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload
+        set -eu
+        if [ "${{ inputs.dry-run }}" == 'true' ]; then
+            echo curl -s --user "${{ inputs.username }}:${{ inputs.password }}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.zip }}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload
             exit
         fi
 
-        status="$(curl --user "${INPUT_USERNAME}:${INPUT_PASSWORD}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.zip}}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload)"
+        status="$(curl -s --user "${{ inputs.username }}:${{ inputs.password }}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.zip }}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload)"
         echo
-        if [ "$status" -ne 200 ]; then
+        if [ "${status}" -ne 200 ]; then
             echo 'ERROR: Release failed'
             exit 2
         fi
