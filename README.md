@@ -51,7 +51,7 @@ This action takes the following parameters:
   [pg]: https://opensource.org/license/postgresql "⚖️ PostgreSQL License"
   [🧪 Test]: https://github.com/pgxn/postgres-action/actions/workflows/test.yml/badge.svg "🧪 Test Status"
   [ci]: https://github.com/pgxn/postgres-action/actions/workflows/test.yml "🧪 Test Status"
-  [🎬 Action]: https://img.shields.io/badge/Marketplace-Action-orange.svg "[🎬 Marketplace Action]"
+  [🎬 Action]: https://img.shields.io/badge/Marketplace-Action-purple.svg "[🎬 Marketplace Action]"
   [action]: https://github.com/marketplace/actions/pgxn-release-action "[🎬 Marketplace Action]"
   [PGXN]: https://pgxn.org "PostgreSQL Extension Network"
   [workflow secrets]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets
