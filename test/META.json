@@ -1,0 +1,17 @@
+{
+   "name": "widget",
+   "abstract": "A test widget",
+   "description": "Just for testing, nothing to see here, move along.",
+   "version": "1.0.0",
+   "maintainer": "theory",
+   "license": "postgresql",
+   "provides": {
+      "widget": {
+         "file": "widget.sql",
+         "version": "1.0.0"
+      }
+   },
+   "meta-spec": {
+      "version": "1.0.0"
+   }
+}
