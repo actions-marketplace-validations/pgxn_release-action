@@ -20,6 +20,10 @@ inputs:
   dry-run:
     description: Print the release command, rather than execute it
     default: false
+outputs:
+  archive:
+    description: The zip archive file name created and released
+    value: ${{ steps.bundle.outputs.archive }}
 
 runs:
   using: composite
@@ -57,18 +61,18 @@ runs:
             git archive -v --format zip --prefix "${release}/" ${{ inputs.archive-options }} --output "${release}.zip" HEAD
         fi
 
-        printf 'zip=%s.zip\n' "$release" >> "$GITHUB_OUTPUT"
+        printf 'archive=%s.zip\n' "$release" >> "$GITHUB_OUTPUT"
 
     - name: Release
       shell: bash
       run: |
         set -eu
         if [ "${{ inputs.dry-run }}" == 'true' ]; then
-            echo curl -s --user "${{ inputs.username }}:${{ inputs.password }}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.zip }}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload
+            echo curl -s --user "${{ inputs.username }}:${{ inputs.password }}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.archive }}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload
             exit
         fi
 
-        status="$(curl -s --user "${{ inputs.username }}:${{ inputs.password }}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.zip }}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload)"
+        status="$(curl -s --user "${{ inputs.username }}:${{ inputs.password }}" -F 'submit=Release It!' -F "archive=@${{ steps.bundle.outputs.archive }}" -H 'X-Requested-With: XMLHttpRequest' --silent --output /dev/stderr --write-out "%{http_code}" https://manager.pgxn.org/upload)"
         if [ "${status}" -ne 200 ]; then
             echo 'ERROR: Release failed'
             exit 2

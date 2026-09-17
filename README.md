@@ -43,6 +43,40 @@ This action takes the following parameters:
 | `archive-options` | string  | ""        | Additional optoins to pass to `git archive`       |
 | `dry-run`         | boolean | false     | Print the release command, rather than execute it |
 
+## Output
+
+This action emits a single output, `archive`, which contains the name of the
+zip archive file it created uploaded to PGXN. Use it for other releases in
+subsequent steps, for example to make a GitHub release:
+
+```yaml
+name: 🚀 Release
+permissions:
+  contents: write
+on:
+  push:
+jobs:
+  release:
+    name: Release on PGXN
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pgxn/release-action@v0
+        id: pgxn
+        with:
+          username: ${{ secrets.PGXN_USERNAME }}
+          password: ${{ secrets.PGXN_PASSWORD }}
+          dry-run: ${{ !startsWith( github.ref, 'refs/tags/v' ) }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith( github.ref, 'refs/tags/v' )
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: "Release ${{ github.ref_name }}"
+          files: ${{ steps.pgxn.outputs.archive }}
+```
+
 ## Prior Art/Inspirations
 
 *   [pgxn-tools]: Old PGXN Linux/amd64-only OCI image for testing and releasing extensions

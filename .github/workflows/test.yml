@@ -10,10 +10,16 @@ jobs:
         uses: actions/checkout@v7
       - name: Dry Run
         uses: ./
+        id: pgxn
         with:
           username: meyo
           password: s3cr3t
           dry-run: true
+      - name: Outputs
+        run: echo "${{ toJSON(steps.pgxn.outputs) }}"
+      - name: Check output
+        if: steps.pgxn.outputs.archive != 'widget-1.0.0.zip'
+        run: echo 'Archive output not set'; exit 1
       - name: Inspect Bundle
         run: |
           set -eu
@@ -37,7 +43,7 @@ jobs:
         run: echo "OK"
         if: job.steps.release.status == failure()
       - name: Fail Success
-        run: echo 'Unexpected success; exit 1'
+        run: echo 'Unexpected success'; exit 1
         if: job.steps.release.status != failure()
   validation:
     name: Test Validation
@@ -59,7 +65,7 @@ jobs:
         run: echo "OK"
         if: job.steps.release.status == failure()
       - name: Fail Success
-        run: echo 'Unexpected success; exit 1'
+        run: echo 'Unexpected success'; exit 1
         if: job.steps.release.status != failure()
   archve-options:
     name: Test Archive Options
